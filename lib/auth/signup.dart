@@ -1,5 +1,4 @@
 import 'package:app_mm_v3/auth/sign.dart';
-import 'package:app_mm_v3/views/home_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -125,7 +124,7 @@ class SignupPage extends StatelessWidget {
                           ? Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => HomePage(),
+                                builder: (context) => SignPage(),
                               ),
                             )
                           : Navigator.push(

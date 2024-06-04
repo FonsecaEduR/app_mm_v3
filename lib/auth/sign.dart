@@ -11,8 +11,8 @@ class SignPage extends StatefulWidget {
 }
 
 class _SignPageState extends State<SignPage> {
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
+  final TextEditingController emailController = TextEditingController(text: "edu@teste4.com");
+  final TextEditingController passwordController = TextEditingController(text: "123456");
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   Future<void> _signInWithEmailAndPassword(BuildContext context) async {

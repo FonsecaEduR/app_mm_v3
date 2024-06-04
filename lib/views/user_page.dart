@@ -1,7 +1,7 @@
 import 'package:app_mm_v3/src/add.dart';
 import 'package:app_mm_v3/src/app_widget.dart';
 import 'package:app_mm_v3/views/home_page.dart';
-import 'package:app_mm_v3/auth/sign.dart'; // Certifique-se de importar a página de login
+import 'package:app_mm_v3/views/splash_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -137,7 +137,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
               Navigator.of(context).pushReplacement(
                 MaterialPageRoute(
                     builder: (context) =>
-                        const SignPage()), // Redireciona para a página de login
+                        const SplashPage() ), // Redireciona para a página de login
               );
             },
           ),

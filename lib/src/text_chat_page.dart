@@ -3,8 +3,6 @@ import 'package:app_mm_v3/views/home_page.dart';
 import 'package:app_mm_v3/views/user_page.dart';
 import 'package:flutter/material.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class TextChatPage extends StatefulWidget {
   const TextChatPage({Key? key}) : super(key: key);
@@ -16,7 +14,7 @@ class TextChatPage extends StatefulWidget {
 class _TextChatPageState extends State<TextChatPage> {
   late final GenerativeModel geminiModel;
   var loading = false;
-  var messages = <String>[];
+  var messages = <ChatMessage>[];
   var chatHistory = <Content>[];
   final TextEditingController _messageController = TextEditingController();
 
@@ -25,13 +23,13 @@ class _TextChatPageState extends State<TextChatPage> {
     super.initState();
     geminiModel = GenerativeModel(
       model: 'gemini-1.0-pro',
-      apiKey: 'AIzaSyASJpDWFpmKHNSdMRgtmIy49g_KlZ9phdc',
+      apiKey: 'AIzaSyASJpDWFpmKHNSdMRgtmIy49g_KlZ9phdc', // Substitua pela sua chave de API
     );
   }
 
   void addMessage(String message, bool isUserMessage) {
     setState(() {
-      messages.insert(0, message);
+      messages.insert(0, ChatMessage(message: message, isUser: isUserMessage));
       chatHistory.add(Content.text(message));
     });
   }
@@ -40,17 +38,18 @@ class _TextChatPageState extends State<TextChatPage> {
     final message = _messageController.text;
     if (message.isEmpty) return;
 
-    addMessage(message, true);
+    addMessage(message, true); // Adiciona a mensagem do usuário ao histórico
     _messageController.clear();
 
     setState(() {
       loading = true;
     });
 
+    // Passa todo o histórico de mensagens para o modelo
     final result = await geminiModel.generateContent(chatHistory);
 
     if (result.text != null) {
-      addMessage(result.text!, false);
+      addMessage(result.text!, false); // Adiciona a resposta ao histórico
     }
 
     setState(() {
@@ -63,187 +62,174 @@ class _TextChatPageState extends State<TextChatPage> {
     return Scaffold(
       body: Stack(
         children: [
+          // Imagem substituindo o AppBar
           Positioned(
             top: 0,
             left: 0,
             right: 0,
             child: Container(
-              height: MediaQuery.of(context).size.height * 0.3,
-              decoration: const BoxDecoration(
+              height: MediaQuery.of(context).size.height * 0.3, // Ajuste a altura conforme necessário
+              decoration: BoxDecoration(
                 image: DecorationImage(
-                  image: AssetImage("assets/images/retangulo.png"),
+                  image: AssetImage("assets/images/nav.png"), // Substitua pelo caminho da sua imagem
                   fit: BoxFit.cover,
                 ),
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(0),
-                  bottomRight: Radius.circular(0),
-                ),
-              ),
-              child: const Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Seja Bem Vindo!',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 20),
-                  Text(
-                    'Fale com a MiMi',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 18, color: Colors.white),
-                  )
-                ],
               ),
             ),
           ),
           Positioned.fill(
-            top: MediaQuery.of(context).size.height * 0.4,
-            child: Container(
-              decoration: const BoxDecoration(),
-              child: Column(
-                children: [
-                  Expanded(
-                    child: ListView.builder(
-                      reverse: true,
-                      itemCount: messages.length,
-                      itemBuilder: (context, index) {
-                        final message = messages[index];
-                        final isUserMessage = index % 2 == 0;
-                        return Row(
-                          mainAxisAlignment: isUserMessage
-                              ? MainAxisAlignment.end
-                              : MainAxisAlignment.start,
+            top: MediaQuery.of(context).size.height * 0.3, // Ajuste o preenchimento conforme necessário
+            child: Column(
+              children: [
+                Expanded(
+                  child: ListView.builder(
+                    reverse: true, // Para exibir as mensagens de baixo para cima
+                    itemCount: messages.length,
+                    itemBuilder: (context, index) {
+                      final chatMessage = messages[index];
+                      final isUserMessage = chatMessage.isUser;
+                      return Align(
+                        alignment: isUserMessage ? Alignment.centerRight : Alignment.centerLeft,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            Container(
-                              margin: const EdgeInsets.symmetric(
-                                  vertical: 5, horizontal: 10),
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: isUserMessage
-                                    ? const Color(0xFF3F8782)
-                                    : const Color(0xFF734B9B),
-                                borderRadius: BorderRadius.circular(20),
-                                boxShadow: const [
-                                  BoxShadow(
-                                    color: Colors.black26,
-                                    blurRadius: 4,
-                                    offset: Offset(2, 2),
-                                  ),
-                                ],
+                            if (!isUserMessage)
+                              CircleAvatar(
+                                radius: 16,
+                                backgroundImage: AssetImage("assets/images/icon2.jpg"), // Substitua pelo caminho da sua imagem
                               ),
-                              child: Text(
-                                message,
-                                style: TextStyle(
-                                  color: isUserMessage
-                                      ? const Color.fromARGB(255, 255, 255, 255)
-                                      : Colors.white,
+                            SizedBox(width: 8),
+                            Flexible(
+                              child: Container(
+                                margin: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                                padding: EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: isUserMessage ? Color(0xFF3F8782) : Color(0xFF734B9B),
+                                  borderRadius: BorderRadius.circular(20), // Arredondar todas as bordas
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black26,
+                                      blurRadius: 4,
+                                      offset: Offset(2, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Text(
+                                  chatMessage.message,
+                                  style: TextStyle(color: Colors.white),
                                 ),
                               ),
                             ),
+                            if (isUserMessage)
+                              SizedBox(width: 8),
+                            if (isUserMessage)
+                              CircleAvatar(
+                                radius: 16,
+                                backgroundImage: AssetImage("assets/images/user.png"), // Substitua pelo caminho da sua imagem
+                              ),
                           ],
-                        );
-                      },
-                    ),
+                        ),
+                      );
+                    },
                   ),
-                  if (loading)
-                    const Padding(
-                      padding: EdgeInsets.all(8.0),
-                      child: CircularProgressIndicator(),
-                    ),
-                  const Divider(height: 1, color: Colors.grey),
+                ),
+                if (loading)
                   Padding(
                     padding: const EdgeInsets.all(8.0),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: SizedBox(
-                            height: 40,
-                            child: TextFormField(
-                              controller: _messageController,
-                              decoration: InputDecoration(
-                                hintText: 'Digite sua mensagem...',
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                filled: true,
-                                fillColor: Colors.green.shade50,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: LinearGradient(
-                              colors: [Color(0xFF734B9B), Color(0xFF3F8782)],
-                              begin: Alignment.centerRight,
-                              end: Alignment.centerLeft,
-                            ),
-                          ),
-                          child: FloatingActionButton(
-                            onPressed: _sendMessage,
-                            backgroundColor: Colors.transparent,
-                            elevation: 0,
-                            child: const Icon(Icons.send, color: Colors.white),
-                          ),
-                        ),
-                      ],
-                    ),
+                    child: CircularProgressIndicator(),
                   ),
-                  Container(
-                    height: MediaQuery.of(context).size.height * 0.07,
-                    color: const Color(0xFF3F8782),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.home),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => HomePage(),
-                              ),
-                            );
-                          },
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _messageController,
+                          decoration: InputDecoration(
+                            hintText: 'Digite sua mensagem...',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10), // Arredonda todas as bordas
+                            ),
+                            filled: true,
+                            fillColor: Colors.green.shade50,
+                          ),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.add),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const AddTransactionPage(),
-                              ),
-                            );
-                          },
+                      ),
+                      SizedBox(width: 8), // Removido o "const" aqui
+                      Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: LinearGradient(
+                            colors: [Color(0xFF734B9B), Color(0xFF3F8782)],
+                            begin: Alignment.centerRight,
+                            end: Alignment.centerLeft,
+                          ),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.account_circle),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const UserProfilePage(),
-                              ),
-                            );
-                          },
+                        child: FloatingActionButton(
+                          onPressed: _sendMessage,
+                          backgroundColor: Colors.transparent,
+                          elevation: 0,
+                          child: Icon(Icons.send, color: Colors.white),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                Container(
+                  height: MediaQuery.of(context).size.height * 0.07,
+                  color: const Color(0xFF3F8782),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.home),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => HomePage(),
+                            ),
+                          );
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.add),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const AddTransactionPage(),
+                            ),
+                          );
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.account_circle),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const UserProfilePage(),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ],
       ),
     );
   }
+}
+
+class ChatMessage {
+  final String message;
+  final bool isUser;
+
+  ChatMessage({required this.message, required this.isUser});
 }
